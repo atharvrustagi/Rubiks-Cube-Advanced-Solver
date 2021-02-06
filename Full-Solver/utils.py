@@ -97,10 +97,13 @@ flat_cube:
 def draw_flat_cube(pos, win, state):
 	for j, y in enumerate(range(750, 1050, 100)):
 		for i, x in enumerate(range(330, 630, 100)):
-			if i==1 and j==1:
-				pg.draw.rect(win, state_colors[state-1], (x, y, 100, 100))
+			if state<=6:
+				if i==1 and j==1:
+					pg.draw.rect(win, state_colors[state-1], (x, y, 100, 100))
+				else:
+					pg.draw.rect(win, clrs[clrs_keys[pos[j, i]]], (x, y, 100, 100))
 			else:
-				pg.draw.rect(win, clrs[clrs_keys[pos[j, i]]], (x, y, 100, 100))
+				pg.draw.rect(win, (100, 100, 100), (x, y, 100, 100))
 
 	for y in range(750, 1051, 100):
 		pg.draw.line(win, (0,0,0), (330, y), (630, y))
@@ -197,9 +200,12 @@ def state_change_map(state):
 		return (1, 0)
 	elif state==5:
 		return (0, -1)
+	elif state==6:
+		return (0, 0)
 
 # start -> blue top, yellow front(cam)
 # yellow - green - orange - blue - red - white
 def change_angle(state, n, a, b):
 	f = state_change_map(state)
 	return a+f[0]*np.pi/2/n, b+f[1]*np.pi/2/n
+
