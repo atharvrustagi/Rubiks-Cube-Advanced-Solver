@@ -1,13 +1,16 @@
 import numpy as np
 from time import perf_counter as pf
 import cv2
+import kociemba as kc
 import pygame as pg
 from Functions_3D import *
 from Texts import *
 
+
 clrs = {'r':np.array([255, 40, 38]), 'g':np.array([36, 255, 50]), 'y':np.array([255, 200, 100]), 
         'o':np.array([255, 150, 100]), 'b':np.array([21, 113, 243]), 'w':np.array([255, 255, 255])}
 clrs_keys = list(clrs.keys())
+clrs_rev = {np.sum(clrs[k]):k for k in clrs.keys()}
 
 target_colors = np.array([clrs[i] for i in clrs.keys()], dtype=np.uint8)
 
@@ -21,8 +24,6 @@ def init_colors():
 image size = 640 x 480
 img.shape = (480, 640)
 cube size = 240 x 240
-
-
 """
 
 def d_angles(keys, n, dalpha, dbeta):
@@ -48,10 +49,9 @@ def d_angles(keys, n, dalpha, dbeta):
 
 	return dalpha, dbeta
 
-def find_colors2(img):
+def find_colors(img):
     # slicing and taking mean for image
 	color_list = np.zeros((3, 3), dtype=np.uint8)
-	img = cv2.flip(img, 1)
 	new_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 	cube_size = 80
@@ -129,8 +129,23 @@ def draw_cube(cubeparams, win):
 		v = dc[k]
 		draw_surface(proj_cube[v], v, cubeparams['colors'], win)
 
-def blit_texts(win):
+def blit_text(win, state, solution=None, solved=False):
 	win.blit(cam_text, (1440-cam_text.get_width()/2, 120))
+	if state<=6:
+		win.blit(scanning_cube_text, (1440-scanning_cube_text.get_width()/2, 800))
+		win.blit(click_anywhere_text, (1440-click_anywhere_text.get_width()/2, 880))
+		win.blit(state_text[state-1], (1440-state_text[state-1].get_width()/2, 840))
+	elif state==8 and not solved:
+		win.blit(invalid_text, (1440-invalid_text.get_width()/2, 800))
+		error_text = font2.render(solution, True, (0, 0, 0))
+		win.blit(error_text, (1440-error_text.get_width()/2, 840))
+		win.blit(scan_again_text, (1440-scan_again_text.get_width()/2, 880))
+	elif state==7 and solved:
+		win.blit(solution_found_text, (1440-solution_found_text.get_width()/2, 800))
+		sol_text = font2.render(solution, True, (0, 0, 0))
+		win.blit(sol_text, (1440-sol_text.get_width()/2, 850))
+		win.blit(click_anywhere2_text, (1440-click_anywhere2_text.get_width()/2, 900))
+
 
 def create_cube(side = 50):
 	s = side
@@ -177,7 +192,6 @@ def create_cube(side = 50):
 	return surfaces
 
 
-
 state_color_lists = [[i for i in range(18, 27)],
 					 [i for i in range(9, 18)],
 					 [i for i in range(27, 36)],
@@ -201,11 +215,68 @@ def state_change_map(state):
 	elif state==5:
 		return (0, -1)
 	elif state==6:
-		return (0, 0)
+		return (-1, 1)
 
 # start -> blue top, yellow front(cam)
 # yellow - green - orange - blue - red - white
 def change_angle(state, n, a, b):
 	f = state_change_map(state)
 	return a+f[0]*np.pi/2/n, b+f[1]*np.pi/2/n
+
+def solve_cube(colors):
+	t = pf()
+	s = color_to_str(colors)
+	sol = kc.solve(s)
+	return sol, pf()-t
+
+def color_to_str(colors):
+	s = ""
+	for c in colors[[18,21,24,19,22,25,20,23,26]]:
+		s += clrs_rev[np.sum(c)]
+
+	for c in colors[[27,30,33,28,31,34,29,32,35]]:
+		s += clrs_rev[np.sum(c)]
+
+	for c in colors[[9,12,15,10,13,16,11,14,17]]:
+		s += clrs_rev[np.sum(c)]
+
+	for c in colors[[53,50,47,52,49,46,51,48,45]]:
+		s += clrs_rev[np.sum(c)]
+
+	for c in colors[[0,3,6,1,4,7,2,5,8]]:
+		s += clrs_rev[np.sum(c)]
+
+	for c in colors[[36,39,42,37,40,43,38,41,44]]:
+		s += clrs_rev[np.sum(c)]
+
+	# mapping
+	ns = ""
+	for c in s:
+		if c=='y':
+			ns += 'U'
+		elif c=='g':
+			ns += 'F'
+		elif c=='r':
+			ns += 'L'
+		elif c=='o':
+			ns += 'R'
+		elif c=='w':
+			ns += 'D'
+		elif c=='b':
+			ns += 'B'
+
+	# print(s)
+	# print(ns)
+	return ns
+
+
+def algorithm(move, moves_to_take):
+	l = move
+	if len(l) > 1 and l[1]=='2':
+		for _ in range(2):
+			x = algo_move[l[0]]
+			moves_to_take.append(x)
+	else:
+		x = algo_move[l]
+		moves_to_take.append(x)
 
