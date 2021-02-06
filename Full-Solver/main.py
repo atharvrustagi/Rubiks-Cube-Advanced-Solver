@@ -17,15 +17,14 @@ cam.set(4, 720)
 
 
 # draw function
-def draw(cam_img, flat_cube_colors, cube_params, lens_image, state):
+def draw(cam_img, flat_cube_colors, cube_params, lens_image, state, soln=None, solved=False):
 	win.fill(clrs['w'])
 	win.blit(lens_image, (1440-25, 160))
-	blit_texts(win)
+	blit_text(win, state, soln, solved)
 	win.blit(cam_img, (0, 0))
 	draw_flat_cube(flat_cube_colors, win, state)
 	draw_cube(cube_params, win)
 	pg.display.update()
-
 
 
 # mainloop
@@ -41,6 +40,10 @@ def main(run):
 	lens_image = pg.image.load('lens.png')
 	lens_image = pg.transform.scale(lens_image, (50, 50))
 	frame_read = 0
+	solution = None
+	solved = False
+	solution_list = None
+	start_playing = False
 
 	while run:
 		t = pf()
@@ -52,8 +55,9 @@ def main(run):
 		if frame_read == 0:
 			frame_read = 3
 			src, img = cam.read()
+			img = cv2.flip(img, 1)
 			if state<=6:
-				col, img = find_colors2(img)
+				col, img = find_colors(img)
 
 			# transforming to pygame image
 			img = get_pg_image(img)
@@ -71,13 +75,29 @@ def main(run):
 					cube_params = {'cube':cube, 'colors':cube_colors, 'a':alpha+dalpha, 'b':beta+dbeta, 'pos':pos}
 					draw(img, col, cube_params, lens_image, state)
 				state += 1
+			elif e.type==pg.MOUSEBUTTONDOWN and solution_list:
+				start_playing = True
+
+		if state==7 and not solved:
+			# solution, time = solve_cube(cube_colors)
+			try:
+				solution, time = solve_cube(cube_colors)
+				print(f"\n\nSolution took {time} seconds and {solution.count(' ')+1} moves")
+				solution_list = solution.split(' ')
+				print(solution_list)
+				solved = True
+			except Exception as e:
+				solution = str(e)
+				state += 1
+
+		if start_playing:
+			start_playing = play_moves(solution_list, cube, cube_colors)
 
 		cube_params = {'cube':cube, 'colors':cube_colors, 'a':alpha+dalpha, 'b':beta+dbeta, 'pos':pos}
 
-		draw(img, col, cube_params, lens_image, state)
+		draw(img, col, cube_params, lens_image, state, solution, solved)
 
 		# print(f"FPS: {round(1/(pf()-t))}")
-
 
 
 if __name__ == "__main__":
