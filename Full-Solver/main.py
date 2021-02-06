@@ -3,6 +3,7 @@ import cv2
 from utils import *
 from time import perf_counter as pf
 import numpy as np
+import os
 
 # pygame parameters
 WINSIZE = (1920, 1080)		
@@ -47,11 +48,12 @@ def main(run):
 		keys = pg.key.get_pressed()
 		dalpha, dbeta = d_angles(keys, nturn_angle, dalpha, dbeta)
 
-		# reading camera every 3 frames
+		# reading camera input every 3 frames
 		if frame_read == 0:
 			frame_read = 3
 			src, img = cam.read()
-			col, img = find_colors2(img)
+			if state<=6:
+				col, img = find_colors2(img)
 
 			# transforming to pygame image
 			img = get_pg_image(img)
@@ -61,7 +63,8 @@ def main(run):
 		for e in pg.event.get():
 			if e.type==pg.QUIT:
 				run = False
-			elif e.type==pg.MOUSEBUTTONDOWN and state<6:
+				os.remove('temp.jpg')
+			elif e.type==pg.MOUSEBUTTONDOWN and state<7:
 				change_cube_params(cube_colors, col, state)
 				for _ in range(nturn_angle):
 					alpha, beta = change_angle(state, nturn_angle, alpha, beta)
