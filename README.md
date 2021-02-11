@@ -1,5 +1,5 @@
 # Rubiks-Cube-Advanced-Solver
-An advanced Rubik's cube solver using the Kociemba Algorithm (solves in less than or equal to 20 moves)
+An advanced Rubik's cube solver using the Kociemba Algorithm (solves in about 20 moves)
 Manually input the Rubik's Cube state and find the solution.
 
 
